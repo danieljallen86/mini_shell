@@ -1,24 +1,25 @@
 #include "smallsh.h"
 
 int main(){
-  printf("\n\n");
-  char user_input[2048];
+  char user_input[2048] = "\0";
+  int process_status = 0;
+  int* pstatus = &process_status;
 
-  while (strcmp(user_input, "quit\n")){
+  while (strncmp(user_input, "quit", 4)){
     // show prompt and get input
     printf(": ");
     fgets(user_input, 2048, stdin);
 
-    printf("%s\n", user_input); // test line
-    if(!strcmp(user_input, "cd\n")){
-      char* lui[] = {"cd"};
-      execlp("cd","cd","~", NULL);
-      system("pwd");
+    if(strncmp(user_input,"quit", 4) 
+    && user_input[0] != '#' 
+    && user_input[0] != '\n'){
+      // parse args into linked list
+      struct sh_command* command = parse_command(user_input);
+
+      // test_get_command(command);
+      run_process(command, pstatus);
+
+      free_command(command);
     }
-
-    // parse args into linked list
-    char* prog_arg = get_arg_list(user_input);
-
-    // execvp(
   }
 }
