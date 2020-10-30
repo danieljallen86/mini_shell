@@ -22,7 +22,7 @@ struct sh_command* command_init(char* user_input){
   
   command->background = 0;
   command->input_file = 0;
-  command->output_file = 0;
+  command->output_file = 1;
   command->arg_count = 0;
 
   return command;
@@ -46,7 +46,7 @@ struct sh_command* parse_command(char* user_input){
       // if < is parsed get the input file file descriptor 
       if(!strcmp(token, "<")){
         token = strtok_r(NULL, " \n", &saveptr);  // get the input file
-        command->input_file = open(token, O_RDONLY, 444);
+        command->input_file = open(token, O_RDONLY, 0666);
         if(command->input_file == -1){
           perror("input redirection failed\n");
         }
@@ -54,7 +54,7 @@ struct sh_command* parse_command(char* user_input){
       // if > is parsed get the output file file descriptor
       }else if(!strcmp(token, ">")){
         token = strtok_r(NULL, " \n", &saveptr);  // get the input file
-        command->output_file = open(token, O_CREAT | O_WRONLY, 222);
+        command->output_file = open(token, O_RDWR | O_CREAT, 0666);
         if(command->output_file == -1){
           perror("output redirection failed\n");
         }

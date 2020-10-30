@@ -18,6 +18,8 @@ int main(){
 
       // test_get_command(command);
       run_process(command, pstatus);
+      
+      fflush(stdout);
 
       free_command(command);
     }

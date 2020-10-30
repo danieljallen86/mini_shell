@@ -23,7 +23,7 @@ void get_status(int* status){
 }
 
 void typed_process(struct sh_command* command, int* status){
-
+  int result;
   pid_t child_pid = fork();
 
   switch(child_pid){
@@ -35,9 +35,20 @@ void typed_process(struct sh_command* command, int* status){
 
     // fork successful
     case 0:
+      result = dup2(command->output_file, 1);
+      if(result == -1){
+        perror("dup2");
+        exit(2);
+      }
+
+      result = dup2(command->input_file, 0);
+      if(result == -1){
+        perror("dup2");
+        exit(2);
+      }
       execvp(command->arg_list[0],command->arg_list);
       // exec only returns if an error
-      perror("execution of process failed\n");
+      perror(command->arg_list[0]);
       exit(2);
       break;
 
