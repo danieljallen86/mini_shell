@@ -5,6 +5,8 @@ int main(){
   int process_status = 0;
   int* pstatus = &process_status;
 
+//  signal(SIGINT, SIG_IGN);
+
   while (strncmp(user_input, "quit", 4)){
     // show prompt and get input
     printf(": ");

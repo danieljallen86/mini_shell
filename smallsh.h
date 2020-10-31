@@ -1,4 +1,5 @@
 #include <fcntl.h>
+#include <signal.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -18,6 +19,7 @@ void run_process(struct sh_command*, int*);
 void change_dir(struct sh_command*, int*);
 void get_status(int*);
 void typed_process(struct sh_command*, int*);
+void child_process(struct sh_command*);
 
 struct sh_command{
   int arg_count;

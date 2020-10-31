@@ -85,7 +85,7 @@ struct sh_command* parse_command(char* user_input){
   }while(token);
 
   // if output not set, set to standard out
-  if(!command->output_file)
+  if(command->output_file == 0)
     command->output_file = 1;
 
   return command;
