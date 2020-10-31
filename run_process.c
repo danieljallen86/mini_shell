@@ -22,8 +22,31 @@ void get_status(int* status){
   printf("exit value %d\n", *status);
 }
 
-void typed_process(struct sh_command* command, int* status){
+void child_process(struct sh_command* command){
   int result;
+
+  // set output stream if different than stdout
+  result = dup2(command->output_file, 1); 
+  if(result == -1){
+    perror("dup2");
+    exit(2);
+  }
+
+  // set input stream if different than stdin
+  result = dup2(command->input_file, 0);
+  if(result == -1){
+    perror("dup2");
+    exit(2);
+  }
+
+  // run the command
+  execvp(command->arg_list[0],command->arg_list);
+  // exec only returns if an error
+  perror(command->arg_list[0]);
+  exit(2);
+}
+
+void typed_process(struct sh_command* command, int* status){
   pid_t child_pid = fork();
 
   switch(child_pid){
@@ -35,21 +58,7 @@ void typed_process(struct sh_command* command, int* status){
 
     // fork successful
     case 0:
-      result = dup2(command->output_file, 1);
-      if(result == -1){
-        perror("dup2");
-        exit(2);
-      }
-
-      result = dup2(command->input_file, 0);
-      if(result == -1){
-        perror("dup2");
-        exit(2);
-      }
-      execvp(command->arg_list[0],command->arg_list);
-      // exec only returns if an error
-      perror(command->arg_list[0]);
-      exit(2);
+      child_process(command);
       break;
 
     default:

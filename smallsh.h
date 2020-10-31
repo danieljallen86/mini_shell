@@ -11,6 +11,7 @@ struct sh_command* command_init(char*);
 struct sh_command* parse_command(char*);
 void free_command(struct sh_command*);
 void test_get_command(struct sh_command*);
+void dollar_sign_expansion(char*);
 
 // run processes
 void run_process(struct sh_command*, int*);

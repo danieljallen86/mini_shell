@@ -16,11 +16,10 @@ int main(){
       // parse args into linked list
       struct sh_command* command = parse_command(user_input);
 
-      // test_get_command(command);
+      //test_get_command(command);
       run_process(command, pstatus);
       
       fflush(stdout);
-
       free_command(command);
     }
   }
