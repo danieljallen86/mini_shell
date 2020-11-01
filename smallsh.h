@@ -26,10 +26,11 @@ void set_fg_only();
 void handle_SIGINT(int);
 void set_SIGINT_action();
 void set_signals();
+void handle_SIGTERM();
+void quit_shell(pid_t*);
 
 // get arguments
-void check_background(struct bg_child*);
-void get_user_input(char*);
+void get_user_input(char* user_input, pid_t*);
 struct sh_command* command_init();
 struct sh_command* parse_command(char*);
 void free_command(struct sh_command*);
@@ -37,10 +38,11 @@ void test_get_command(struct sh_command*);
 void dollar_sign_swap(char*);
 
 // run processes
-void run_process(struct sh_command*, int*, struct bg_child*);
-void change_dir(struct sh_command*, int*);
+void run_process(struct sh_command*, int*, pid_t*);
+void change_dir(struct sh_command*);
 void get_status(int*);
-void typed_process(struct sh_command*, int*, struct bg_child*);
-struct bg_child* add_bg_process(struct bg_child*, pid_t);
+void typed_process(struct sh_command*, int*, pid_t*);
+void track_bg_procs(pid_t* running, pid_t pid);
+void check_background(pid_t*);
 
 int fg_only;

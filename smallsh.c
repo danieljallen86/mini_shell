@@ -1,37 +1,33 @@
 #include "smallsh.h"
 
-void handle_SIGTERM(){
-  exit(0);
-}
 
-void quit_shell(){
-  signal(SIGTERM, handle_SIGTERM);
-  kill(0, SIGTERM);
+void quit_shell(pid_t* running){
+  for(int i = 0; i < 512; i++){
+    if(running[i] != 0)
+      kill(running[i], 15);
+  }
 }
 
 int main(){
   char user_input[2048] = "\0";
   int process_status = 0;
-  struct bg_child* cur_running = NULL;
+  pid_t running[512] = {0};
 
   set_signals();
 
-  while (strncmp(user_input, "quit", 4)){
-    // check background processes
-    //check_background(cur_running);
-    printf("pid of first background process is %d", cur_running == NULL ? 000 : cur_running->pid);
-      
-    get_user_input(user_input);
+  while (strncmp(user_input, "exit", 4)){
+    get_user_input(user_input, running);
     
-    if(strncmp(user_input,"quit", 4)){
+    if(strncmp(user_input,"exit", 4)){
 
       // parse the command
       struct sh_command* command = parse_command(user_input);
 
       // test_get_command(command);
-      run_process(command, &process_status, cur_running);
+      run_process(command, &process_status, running);
       fflush(stdout);
     }
   }
-  quit_shell();
+  quit_shell(running);
+  return 0;
 }

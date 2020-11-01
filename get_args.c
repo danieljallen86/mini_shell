@@ -14,7 +14,15 @@ void test_get_command(struct sh_command* command){
     printf("in the front\n");
 }
 
-void get_user_input(char* user_input){
+/*************************************************
+* Function gets user input
+*   Parameters: pointer to char array for input 
+*     and an array of background pids
+*   Returns: None
+**************************************************/
+void get_user_input(char* user_input, pid_t* running){
+  check_background(running);
+      
   // show prompt and get input
   printf(": ");
   fgets(user_input, 2048, stdin);
@@ -26,6 +34,11 @@ void get_user_input(char* user_input){
   dollar_sign_swap(user_input);
 }
 
+/*********************************************
+* Initializes an sh_command structure
+*   Parameters: None
+*   Returns: pointer to an sh_command struct
+**********************************************/
 struct sh_command* command_init(){
   struct sh_command* command = malloc(sizeof(struct sh_command));
   
@@ -40,6 +53,11 @@ struct sh_command* command_init(){
   return command;
 }
 
+/**********************************************
+* Parses user input into an sh_command struct
+*   Parameters: char array of user input
+*   Returns: pointer to an sh_command struct
+***********************************************/
 struct sh_command* parse_command(char* user_input){
   struct sh_command* command = command_init();
   char *saveptr;
@@ -62,7 +80,7 @@ struct sh_command* parse_command(char* user_input){
         token = strtok_r(NULL, " \n", &saveptr);  // get the input file
         command->input_file = open(token, O_RDONLY, 0666);
         if(command->input_file == -1){
-          perror("input redirection failed\n");
+          printf("cannot open %s for input\n", token);
         }
       
       // if > is parsed get the output file file descriptor
@@ -70,7 +88,7 @@ struct sh_command* parse_command(char* user_input){
         token = strtok_r(NULL, " \n", &saveptr);  // get the input file
         command->output_file = open(token, O_RDWR | O_CREAT, 0666);
         if(command->output_file == -1){
-          perror("output redirection failed\n");
+          printf("cannot open %s for output\n", token);
         }
   
       // if & is parsed it runs in the background
@@ -83,7 +101,6 @@ struct sh_command* parse_command(char* user_input){
             perror("/dev/null not opened\n");
           }  
        }
-
 
       // otherwise its an argument
       }else{
@@ -102,6 +119,11 @@ struct sh_command* parse_command(char* user_input){
   return command;
 }
 
+/****************************************************************
+* Replaces all instances of '$$' with the pid in the user input
+*   Parameters: char array of user input
+*   Returns: a char array with $$ replaced with the pid
+****************************************************************/
 void dollar_sign_swap(char* user_input){
   int i = 0;
   char new_input[2048] = "\0";
@@ -127,6 +149,11 @@ void dollar_sign_swap(char* user_input){
   strcpy(user_input, new_input);
 }
 
+/*********************************************
+* Frees memory allocated for command struct
+*   Parameters: pointer to command struct
+*   Returns: None
+**********************************************/
 void free_command(struct sh_command* command){
   for(int i = 0; i < command->arg_count; i++)
     free(command->arg_list[i]);

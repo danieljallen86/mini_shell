@@ -1,59 +1,101 @@
 #include "smallsh.h"
 
-void run_process(struct sh_command* command, int* status, struct bg_child* cur_running){
+/************************************************************
+* Runs the process 
+*   Parameters: sh_command struct, a poiinter to the satus, 
+*     and an array of background pids
+*   Returns: None
+*************************************************************/
+void run_process(struct sh_command* command, int* status, pid_t* running){
+  // if there was no command parsed or the first charcter was a #, do nothing
   if(command->arg_list[0] == NULL || command->arg_list[0][0] == '#'){
     ;
+
+  // if cd command was given
   }else if(!strcmp(command->arg_list[0], "cd")){
-    change_dir(command, status);
+    change_dir(command);
+
+  // if status built in was given
   }else if(!strcmp(command->arg_list[0], "status")){
     get_status(status);
+
+  // for all other commands
   }else{
-    typed_process(command, status, cur_running);
+    typed_process(command, status, running);
   }
+  
   fflush(stdout);
   free_command(command);
 }
 
-void change_dir(struct sh_command* command, int* status){
+/*****************************************
+* Change Directory (cd) built in command
+*   Parameters: sh_command struct
+*   Returns: None
+******************************************/
+void change_dir(struct sh_command* command){
+  // if no directory is given, navigate to the home dir
   if(command->arg_count == 1){
     chdir(getenv("HOME"));
+
+  // otherwise navigate to the directory specified
   }else{
     chdir(command->arg_list[1]);
   }
 }
 
+/************************************************
+* IN PROGRESS
+************************************************/
 void get_status(int* status){
-  printf("exit value %d\n", *status);
+  if(WIFEXITED(*status)){
+    printf("exit value %d\n", WEXITSTATUS(*status));
+  }else if(WIFSIGNALED(*status)){
+    printf("I was killed!\n");
+  }
 }
 
-void child_process(struct sh_command* command, struct bg_child* cur_running){
+/****************************************************
+* Executes the child process from a successful fork
+*   Parameters: sh_command, list of background pids
+*   Returns: None
+*****************************************************/
+void child_process(struct sh_command* command, pid_t* running){
   int result;
   
-  set_SIGINT_action();
+  //set_SIGINT_action();
 
   // foreground processes ignore CTRL-Z
   if(command->background == 0){
     signal(SIGTSTP, SIG_IGN);
+    signal(SIGINT, SIG_DFL);
   }
       
+  // set output
   result = dup2(command->output_file, 1);
   if(result == -1){
-    perror("dup2");
     exit(2);
   }
 
+  // set input
   result = dup2(command->input_file, 0);
   if(result == -1){
-    perror("dup2");
     exit(2);
   }
+
+  // exectute the command
   execvp(command->arg_list[0],command->arg_list);
   // exec only returns if an error
   perror(command->arg_list[0]);
-  exit(2);
+  exit(1);
 }
 
-void typed_process(struct sh_command* command, int* status, struct bg_child* cur_running){
+/***********************************************************************
+* Handles non-built-in processes
+*   Parameters: sh_struct, pointer to status, list of background pids
+*   Returns: None
+***********************************************************************/
+void typed_process(struct sh_command* command, int* status, pid_t* running){
   pid_t child_pid = fork();
 
   switch(child_pid){
@@ -65,18 +107,16 @@ void typed_process(struct sh_command* command, int* status, struct bg_child* cur
 
     // fork successful
     case 0:
-      child_process(command, cur_running);
+      child_process(command, running);
       break;
 
     default:
       // if background process, print pid
       if(command->background != 0){
         printf("background pid is %d\n", child_pid);
-        // add to the list of running process
-        //cur_running = add_bg_process(cur_running, child_pid);
+        track_bg_procs(running, child_pid);
       }
       child_pid = waitpid(child_pid, status, command->background);
-      *status = (*status != 0) ? 1 : 0;
 
       // reset sigint ignore
       signal(SIGINT, SIG_IGN);
@@ -84,25 +124,35 @@ void typed_process(struct sh_command* command, int* status, struct bg_child* cur
   }
 }
 
-// add a process - takes pointer to linked list head and pid
-struct bg_child* add_bg_process(struct bg_child* cur_running, pid_t pid){
-printf("head pid: %d", cur_running->pid ? cur_running->pid : 0);
-  struct bg_child* head = cur_running;
-  // create a new new node
-  struct bg_child* new_proc = malloc(sizeof(struct bg_child));
-  new_proc->pid = pid;
-  new_proc->next = NULL;
-printf("new child pid: %d", new_proc->pid);
-  // linked list empty (head = NULL)
-  if(cur_running == NULL){
-    head = new_proc;
-
-  }else{
-    while(cur_running->next){
-      cur_running = cur_running->next;
+/************************************************************************
+* Adds a new background process to the list
+*   Parameters: pointer to list of background pids, pid to add to list
+*   Returns: None
+************************************************************************/
+void track_bg_procs(pid_t* running, pid_t pid){
+  // look through array
+  for(int i = 0; i < 512; i++){
+    // put new pid in first empty spot
+    if(running[i] == 0){
+      running[i] = pid;
+      break;
     }
-    cur_running->next = new_proc;
   }
-printf("head pid: %d", cur_running->pid ? cur_running->pid : 0);
-  return head;
+}
+
+/**************************************************
+* Checks all backgroud processes and cleans list
+*   Parameters: pointer to list of background pids
+*   Returns: None
+***************************************************/
+void check_background(pid_t* running){
+  // look through array
+  for(int i = 0; i < 512; i++){
+    // if it's not empty and it is no longer running
+    if(running[i] != 0 && kill(running[i], 0)){
+      // Let user know it was completed
+      printf("background pid %d is done: ", running[i]);
+      running[i] = 0; // clear the spot in the array 
+    }
+  }
 }
