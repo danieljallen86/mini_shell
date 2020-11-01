@@ -8,6 +8,8 @@ void run_process(struct sh_command* command, int* status){
   }else{
     typed_process(command, status);
   }
+  fflush(stdout);
+  free_command(command);
 }
 
 void change_dir(struct sh_command* command, int* status){
@@ -22,30 +24,12 @@ void get_status(int* status){
   printf("exit value %d\n", *status);
 }
 
-void handle_SIGINT(int signum){
-  char* message = "\nTerminated by signal 2\n";
-  write(STDOUT_FILENO, message, 24);
-}
-
-void set_SIGINT_action(){
-  struct sigaction SIGINT_action = {0};
-
-  // register handler
-  SIGINT_action.sa_handler = handle_SIGINT;
-  // block all catchable signals while handle_SIGINT is running
-  sigfillset(&SIGINT_action.sa_mask);
-  // No flags set
-  SIGINT_action.sa_flags = 0;
-  // install signal handler
-  sigaction(SIGINT, &SIGINT_action, NULL);
-}
-
 void child_process(struct sh_command* command){
   int result;
 
   // foreground processes ignore CTRL-Z
   if(command->background == 0)
-    signal(SIGSTOP, SIG_IGN);
+    signal(SIGTSTP, SIG_IGN);
 
   // set input stream if different than stdin
   result = dup2(command->input_file, 0);
@@ -63,6 +47,7 @@ void child_process(struct sh_command* command){
 }
 
 void typed_process(struct sh_command* command, int* status){
+  int result;
   pid_t child_pid = fork();
 
   switch(child_pid){
@@ -74,19 +59,34 @@ void typed_process(struct sh_command* command, int* status){
 
     // fork successful
     case 0:
-      child_process(command);
+      result = dup2(command->output_file, 1);
+      if(result == -1){
+        perror("dup2");
+        exit(2);
+      }
+
+      result = dup2(command->input_file, 0);
+      if(result == -1){
+        perror("dup2");
+        exit(2);
+      }
+      execvp(command->arg_list[0],command->arg_list);
+      // exec only returns if an error
+      perror(command->arg_list[0]);
+      exit(2);
       break;
 
     default:
-//      set_SIGINT_action();
+      set_SIGINT_action();
       // if background process, print pid
       if(command->background != 0){
         printf("background pid is %d\n", getpid());
       }
       child_pid = waitpid(child_pid, status, command->background);
+      *status = (*status != 0) ? 1 : 0;
 
       // reset sigint ignore
-//      signal(SIGINT, SIG_IGN);
+      signal(SIGINT, SIG_IGN);
       break;
   }
 }

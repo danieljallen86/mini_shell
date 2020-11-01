@@ -14,6 +14,14 @@ void test_get_command(struct sh_command* command){
     printf("in the front\n");
 }
 
+void get_user_input(char* user_input){
+  // show prompt and get input
+  printf(": ");
+  fgets(user_input, 2048, stdin);
+
+  dollar_sign_swap(user_input);
+}
+
 struct sh_command* command_init(char* user_input){
   struct sh_command* command = malloc(sizeof(struct sh_command));
   
@@ -22,7 +30,7 @@ struct sh_command* command_init(char* user_input){
   
   command->background = 0;
   command->input_file = 0;
-  command->output_file = 0;
+  command->output_file = 1;
   command->arg_count = 0;
 
   return command;
@@ -31,9 +39,6 @@ struct sh_command* command_init(char* user_input){
 struct sh_command* parse_command(char* user_input){
   struct sh_command* command = command_init(user_input);
   char *saveptr;
-
-  // expand $$ on user_input
-  dollar_sign_expansion(user_input);
 
   // parse command
   char* token = strtok_r(user_input, " \n", &saveptr);
@@ -64,15 +69,15 @@ struct sh_command* parse_command(char* user_input){
   
       // if & is parsed it runs in the background
       }else if(!strcmp(token, "&")){
-        command->background = WNOHANG;
-        
-        // if no output file specified, send to /dev/null
-       if(command->output_file == 0){
+        // if forground only mode is set, no background running
+        if(!fg_only){
+          command->background = WNOHANG;
           command->output_file = open("/dev/null", O_RDWR, 222);
           if(command->output_file == -1){
             perror("/dev/null not opened\n");
           }  
        }
+
 
       // otherwise its an argument
       }else{
@@ -91,48 +96,34 @@ struct sh_command* parse_command(char* user_input){
   return command;
 }
 
+void dollar_sign_swap(char* user_input){
+  int i = 0;
+  char new_input[2048] = "\0";
+  char* to_replace = "$$";
+  char new_str[10];
+  sprintf(new_str,"%d", (int)getpid());
+  int old_len = 2;
+  int new_len = strlen(new_str);
+  char* to_compare = user_input;
+
+  while(*to_compare){
+    // if the substring matches, put new string in the new_input
+    if(strstr(to_compare, to_replace) == to_compare){
+      strcpy(&new_input[i], new_str);
+      i += new_len;
+      to_compare += old_len;
+    
+    // otherwise continue copying the strings
+    }else{
+      new_input[i++] = *to_compare++;
+    }
+  }
+  strcpy(user_input, new_input);
+}
+
 void free_command(struct sh_command* command){
   for(int i = 0; i < command->arg_count; i++)
     free(command->arg_list[i]);
 
   free(command);
-}
-
-// adapted from https://www.geeksforgeeks.org/c-program-replace-word-text-another-given-word/ 
-void dollar_sign_expansion(char* user_input){
-  char new_input[2048];
-  char* to_replace = "$$";
-  int old_len = 2;
-  char str_pid[10];
-  sprintf(str_pid, "%d", getpid());
-  int new_len = strlen(str_pid);
-  int i, count = 0;
-
-  // count number of times to_replace occurs
-  for(i = 0; user_input[i] != '\0'; i++){
-    if(strstr(&user_input[i], to_replace) == &user_input[i]){
-      count ++;
-
-      // jump to index after to_replace
-      i++;
-    }
-  }
-
-  if(count){
-    i = 0;
-    char* to_copy = user_input;
-    while(*to_copy){
-      // compare substring with result 
-      if((strstr(to_copy, to_replace)) == to_copy){
-        strcpy(&new_input[i], str_pid);
-        i += new_len;
-        to_copy += old_len;
-      }else{
-        new_input[i++] = *to_copy++;
-      }
-    }
-    new_input[i] = '\0';
-  
-    strcpy(user_input, new_input);
-  }
 }
