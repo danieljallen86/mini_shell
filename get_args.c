@@ -19,6 +19,10 @@ void get_user_input(char* user_input){
   printf(": ");
   fgets(user_input, 2048, stdin);
 
+  // ignore white space
+  while(*user_input == ' ')
+    user_input++;
+  
   dollar_sign_swap(user_input);
 }
 

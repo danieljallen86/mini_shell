@@ -1,7 +1,9 @@
 #include "smallsh.h"
 
 void run_process(struct sh_command* command, int* status, struct bg_child* cur_running){
-  if(!strcmp(command->arg_list[0], "cd")){
+  if(command->arg_list[0][0] == '#'){
+    ;
+  }else if(!strcmp(command->arg_list[0], "cd")){
     change_dir(command, status);
   }else if(!strcmp(command->arg_list[0], "status")){
     get_status(status);

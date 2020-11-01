@@ -1,35 +1,37 @@
 #include "smallsh.h"
 
 void handle_SIGTSTP(int signum){
-  if(fg_only){
-    char* mode_off = "\nExiting foreground-only mode\n: ";
-    write(STDOUT_FILENO, mode_off, 33);
-    fg_only = 0;
-
-  }else{
-    char* mode_on = "\nEntering foreground-only mode (& will be ignored)\n: ";
-    write(STDOUT_FILENO, mode_on, 53);
-    fg_only = 1;
-  }
+//    char mode_on[] = "\nEntering foreground-only mode (& will be ignored)\n";
+//    char mode_off[] = "\nExiting foreground-only mode\n";
+//  if(fg_only){
+//    write(STDOUT_FILENO, mode_off, 32);
+//    fg_only = 0;
+//
+//  }else{
+//    write(STDOUT_FILENO, mode_on, 53);
+//    fg_only = 1;
+//  }
+char* message = "fuck you!\n";
+write(STDOUT_FILENO, message, 10);
 }
 
-void set_fg_only(){
+void set_SIGTSTP_action(){
   struct sigaction SIGTSTP_action = {0};
 
-  // register handler
+  // register handler handle_SIGSTP
   SIGTSTP_action.sa_handler = handle_SIGTSTP;
-  // block all catchable signals while handle_SIGINT is running
+  // block catchable signals
   sigfillset(&SIGTSTP_action.sa_mask);
-  // No flags set
+  // no flags set
   SIGTSTP_action.sa_flags = 0;
-  // install signal handler
+
+  // install handler
   sigaction(SIGTSTP, &SIGTSTP_action, NULL);
 }
 
 void handle_SIGINT(int signum){
   char* message = "\nTerminated by signal 2\n";
   write(STDOUT_FILENO, message, 24);
-  exit(0);
 }
 
 void set_SIGINT_action(){
@@ -48,5 +50,5 @@ void set_SIGINT_action(){
 void set_signals(){
   signal(SIGINT, SIG_IGN);
   signal(SIGTSTP, handle_SIGTSTP);
-  //set_fg_only();
+  set_SIGTSTP_action();
 }  

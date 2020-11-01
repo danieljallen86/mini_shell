@@ -9,16 +9,17 @@ int main(){
 
   while (strncmp(user_input, "quit", 4)){
     get_user_input(user_input);
+    
+    if(strncmp(user_input,"quit", 4) && user_input[0] != '\n'){
 
-    if(strncmp(user_input,"quit", 4)   // don't do if "quit"
-    && user_input[0] != '#'            // don't do anything with comments
-    && user_input[0] != '\n'){         // don't do anything with new lines
       // parse the command
       struct sh_command* command = parse_command(user_input);
 
       // test_get_command(command);
       run_process(command, &process_status, cur_running);
+      fflush(stdout);
     }
   }
   //killall with process group
+  return 0;
 }
