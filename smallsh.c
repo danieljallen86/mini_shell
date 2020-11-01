@@ -1,5 +1,14 @@
 #include "smallsh.h"
 
+void handle_SIGTERM(){
+  exit(0);
+}
+
+void quit_shell(){
+  signal(SIGTERM, handle_SIGTERM);
+  kill(0, SIGTERM);
+}
+
 int main(){
   char user_input[2048] = "\0";
   int process_status = 0;
@@ -8,9 +17,13 @@ int main(){
   set_signals();
 
   while (strncmp(user_input, "quit", 4)){
+    // check background processes
+    //check_background(cur_running);
+    printf("pid of first background process is %d", cur_running == NULL ? 000 : cur_running->pid);
+      
     get_user_input(user_input);
     
-    if(strncmp(user_input,"quit", 4) && user_input[0] != '\n'){
+    if(strncmp(user_input,"quit", 4)){
 
       // parse the command
       struct sh_command* command = parse_command(user_input);
@@ -20,6 +33,5 @@ int main(){
       fflush(stdout);
     }
   }
-  //killall with process group
-  return 0;
+  quit_shell();
 }

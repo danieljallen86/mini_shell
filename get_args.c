@@ -22,11 +22,11 @@ void get_user_input(char* user_input){
   // ignore white space
   while(*user_input == ' ')
     user_input++;
-  
+
   dollar_sign_swap(user_input);
 }
 
-struct sh_command* command_init(char* user_input){
+struct sh_command* command_init(){
   struct sh_command* command = malloc(sizeof(struct sh_command));
   
   for(int i = 0; i < 512; i++)
@@ -41,15 +41,17 @@ struct sh_command* command_init(char* user_input){
 }
 
 struct sh_command* parse_command(char* user_input){
-  struct sh_command* command = command_init(user_input);
+  struct sh_command* command = command_init();
   char *saveptr;
 
   // parse command
   char* token = strtok_r(user_input, " \n", &saveptr);
-  char* arg = calloc(strlen(token) + 1, sizeof(char)); 
-  strcpy(arg, token);
-  command->arg_list[command->arg_count] = arg;
-  command->arg_count++;
+  if(token){
+    char* arg = calloc(strlen(token) + 1, sizeof(char)); 
+    strcpy(arg, token);
+    command->arg_list[command->arg_count] = arg;
+    command->arg_count++;
+  } 
 
   // parse arguments
   do{
@@ -130,19 +132,4 @@ void free_command(struct sh_command* command){
     free(command->arg_list[i]);
 
   free(command);
-}
-
-void add_bg_child(struct bg_child* cur_running, pid_t child_pid){
-  while(cur_running->next != NULL){
-    cur_running = cur_running->next;
-  }
-  cur_running->next = new_bg_child(child_pid);
-}
-
-struct bg_child* new_bg_child(pid_t pid){
-  struct bg_child* new_child = malloc(sizeof(struct bg_child));
-  new_child->pid = pid;
-  new_child->next = NULL;
-
-  return new_child;
 }

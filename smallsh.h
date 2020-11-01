@@ -28,8 +28,9 @@ void set_SIGINT_action();
 void set_signals();
 
 // get arguments
+void check_background(struct bg_child*);
 void get_user_input(char*);
-struct sh_command* command_init(char*);
+struct sh_command* command_init();
 struct sh_command* parse_command(char*);
 void free_command(struct sh_command*);
 void test_get_command(struct sh_command*);
@@ -40,8 +41,6 @@ void run_process(struct sh_command*, int*, struct bg_child*);
 void change_dir(struct sh_command*, int*);
 void get_status(int*);
 void typed_process(struct sh_command*, int*, struct bg_child*);
-void child_process(struct sh_command*);
-void add_bg_child(struct bg_child*, pid_t);
-struct bg_child* new_bg_child(pid_t);
+struct bg_child* add_bg_process(struct bg_child*, pid_t);
 
 int fg_only;

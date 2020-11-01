@@ -1,18 +1,17 @@
 #include "smallsh.h"
 
 void handle_SIGTSTP(int signum){
-//    char mode_on[] = "\nEntering foreground-only mode (& will be ignored)\n";
-//    char mode_off[] = "\nExiting foreground-only mode\n";
-//  if(fg_only){
-//    write(STDOUT_FILENO, mode_off, 32);
-//    fg_only = 0;
-//
-//  }else{
-//    write(STDOUT_FILENO, mode_on, 53);
-//    fg_only = 1;
-//  }
-char* message = "fuck you!\n";
-write(STDOUT_FILENO, message, 10);
+  fflush(stdout);
+  if(fg_only){
+    char mode_off[] = "\nExiting foreground-only mode\n";
+    write(STDOUT_FILENO, mode_off, 32);
+    fg_only = 0;
+
+  }else{
+    char mode_on[] = "\nEntering foreground-only mode (& will be ignored)\n"; 
+    write(STDOUT_FILENO, mode_on, 53);
+    fg_only = 1;
+  }
 }
 
 void set_SIGTSTP_action(){
@@ -49,6 +48,7 @@ void set_SIGINT_action(){
 
 void set_signals(){
   signal(SIGINT, SIG_IGN);
-  signal(SIGTSTP, handle_SIGTSTP);
+  //signal(SIGTSTP, handle_SIGTSTP);
   set_SIGTSTP_action();
+  signal(SIGCHLD, SIG_IGN);
 }  
