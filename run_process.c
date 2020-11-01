@@ -1,12 +1,12 @@
 #include "smallsh.h"
 
-void run_process(struct sh_command* command, int* status){
+void run_process(struct sh_command* command, int* status, struct bg_child* cur_running){
   if(!strcmp(command->arg_list[0], "cd")){
     change_dir(command, status);
   }else if(!strcmp(command->arg_list[0], "status")){
     get_status(status);
   }else{
-    typed_process(command, status);
+    typed_process(command, status, cur_running);
   }
   fflush(stdout);
   free_command(command);
@@ -26,27 +26,36 @@ void get_status(int* status){
 
 void child_process(struct sh_command* command){
   int result;
+  
+  set_SIGINT_action();
 
   // foreground processes ignore CTRL-Z
-  if(command->background == 0)
+  if(command->background == 0){
     signal(SIGTSTP, SIG_IGN);
 
-  // set input stream if different than stdin
-  result = dup2(command->input_file, 0);
+  // otherwise track it as still running
+  }else{
+    printf("track this!\n");
+  }
+      
+  result = dup2(command->output_file, 1);
   if(result == -1){
     perror("dup2");
     exit(2);
   }
 
-  // run the command
+  result = dup2(command->input_file, 0);
+  if(result == -1){
+    perror("dup2");
+    exit(2);
+  }
   execvp(command->arg_list[0],command->arg_list);
-  
   // exec only returns if an error
   perror(command->arg_list[0]);
   exit(2);
 }
 
-void typed_process(struct sh_command* command, int* status){
+void typed_process(struct sh_command* command, int* status, struct bg_child* cur_running){
   int result;
   pid_t child_pid = fork();
 
@@ -59,25 +68,10 @@ void typed_process(struct sh_command* command, int* status){
 
     // fork successful
     case 0:
-      result = dup2(command->output_file, 1);
-      if(result == -1){
-        perror("dup2");
-        exit(2);
-      }
-
-      result = dup2(command->input_file, 0);
-      if(result == -1){
-        perror("dup2");
-        exit(2);
-      }
-      execvp(command->arg_list[0],command->arg_list);
-      // exec only returns if an error
-      perror(command->arg_list[0]);
-      exit(2);
+      child_process(command);
       break;
 
     default:
-      set_SIGINT_action();
       // if background process, print pid
       if(command->background != 0){
         printf("background pid is %d\n", getpid());

@@ -127,3 +127,18 @@ void free_command(struct sh_command* command){
 
   free(command);
 }
+
+void add_bg_child(struct bg_child* cur_running, pid_t child_pid){
+  while(cur_running->next != NULL){
+    cur_running = cur_running->next;
+  }
+  cur_running->next = new_bg_child(child_pid);
+}
+
+struct bg_child* new_bg_child(pid_t pid){
+  struct bg_child* new_child = malloc(sizeof(struct bg_child));
+  new_child->pid = pid;
+  new_child->next = NULL;
+
+  return new_child;
+}

@@ -3,12 +3,9 @@
 int main(){
   char user_input[2048] = "\0";
   int process_status = 0;
-  int* pstatus = &process_status;
-//  fg_only = 0;
+  struct bg_child* cur_running = NULL;
 
-  signal(SIGINT, SIG_IGN);
-  signal(SIGTSTP, handle_SIGTSTP);
-  //set_fg_only();
+  set_signals();
 
   while (strncmp(user_input, "quit", 4)){
     get_user_input(user_input);
@@ -20,7 +17,8 @@ int main(){
       struct sh_command* command = parse_command(user_input);
 
       // test_get_command(command);
-      run_process(command, pstatus);
+      run_process(command, &process_status, cur_running);
     }
   }
+  //killall with process group
 }

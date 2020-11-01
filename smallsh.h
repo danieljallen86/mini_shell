@@ -7,11 +7,25 @@
 #include <sys/wait.h>
 #include <unistd.h>
 
+struct sh_command{
+  int arg_count;
+  char* arg_list[512];
+  int background;
+  int input_file;
+  int output_file;
+};
+
+struct bg_child{
+  int pid;
+  struct bg_child* next;
+};
+
 // signals
 void handle_SIGTSTP(int);
 void set_fg_only();
 void handle_SIGINT(int);
 void set_SIGINT_action();
+void set_signals();
 
 // get arguments
 void get_user_input(char*);
@@ -22,18 +36,12 @@ void test_get_command(struct sh_command*);
 void dollar_sign_swap(char*);
 
 // run processes
-void run_process(struct sh_command*, int*);
+void run_process(struct sh_command*, int*, struct bg_child*);
 void change_dir(struct sh_command*, int*);
 void get_status(int*);
-void typed_process(struct sh_command*, int*);
+void typed_process(struct sh_command*, int*, struct bg_child*);
 void child_process(struct sh_command*);
-
-struct sh_command{
-  int arg_count;
-  char* arg_list[512];
-  int background;
-  int input_file;
-  int output_file;
-};
+void add_bg_child(struct bg_child*, pid_t);
+struct bg_child* new_bg_child(pid_t);
 
 int fg_only;

@@ -11,11 +11,9 @@ void handle_SIGTSTP(int signum){
     write(STDOUT_FILENO, mode_on, 53);
     fg_only = 1;
   }
-  fflush(stdout);
 }
 
 void set_fg_only(){
-  fg_only = 0;
   struct sigaction SIGTSTP_action = {0};
 
   // register handler
@@ -31,6 +29,7 @@ void set_fg_only(){
 void handle_SIGINT(int signum){
   char* message = "\nTerminated by signal 2\n";
   write(STDOUT_FILENO, message, 24);
+  exit(0);
 }
 
 void set_SIGINT_action(){
@@ -45,3 +44,9 @@ void set_SIGINT_action(){
   // install signal handler
   sigaction(SIGINT, &SIGINT_action, NULL);
 }
+
+void set_signals(){
+  signal(SIGINT, SIG_IGN);
+  signal(SIGTSTP, handle_SIGTSTP);
+  //set_fg_only();
+}  
