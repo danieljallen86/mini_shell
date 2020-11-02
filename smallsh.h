@@ -26,8 +26,8 @@ void set_fg_only();
 void handle_SIGINT(int);
 void set_SIGINT_action();
 void set_signals();
-void handle_SIGTERM();
-void quit_shell(pid_t*);
+void close_bg(pid_t*);
+void handle_SIGCHLD(int);
 
 // get arguments
 void get_user_input(char* user_input, pid_t*);
@@ -38,11 +38,12 @@ void test_get_command(struct sh_command*);
 void dollar_sign_swap(char*);
 
 // run processes
-void run_process(struct sh_command*, int*, pid_t*);
+void run_process(struct sh_command*, pid_t*);
 void change_dir(struct sh_command*);
-void get_status(int*);
-void typed_process(struct sh_command*, int*, pid_t*);
-void track_bg_procs(pid_t* running, pid_t pid);
+void get_status();
+void typed_process(struct sh_command*, pid_t*);
+void track_bg_procs(pid_t*, pid_t);
 void check_background(pid_t*);
 
 int fg_only;
+int status;

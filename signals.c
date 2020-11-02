@@ -1,38 +1,38 @@
 #include "smallsh.h"
 
+/*********************************************
+* Signal handler for SIGTSTP
+*   uses global variable to determine if all 
+*   processes are run in the foreground
+**********************************************/
 void handle_SIGTSTP(int signum){
   if(fg_only){
-    char* mode_off = "\nExiting foreground-only mode\n";
+    char* mode_off = "\nExiting foreground-only mode\n: ";
     write(STDOUT_FILENO, mode_off, 32);
     fg_only = 0;
 
   }else{
-    char* mode_on = "\nEntering foreground-only mode (& will be ignored)\n"; 
+    char* mode_on = "\nEntering foreground-only mode (& will be ignored)\n: ";
     write(STDOUT_FILENO, mode_on, 53);
     fg_only = 1;
   }
   fflush(stdout);
 }
 
-void set_SIGTSTP_action(){
-  struct sigaction SIGTSTP_action = {0};
-
-  // register handler handle_SIGSTP
-  SIGTSTP_action.sa_handler = handle_SIGTSTP;
-  // block catchable signals
-  sigfillset(&SIGTSTP_action.sa_mask);
-  // no flags set
-  SIGTSTP_action.sa_flags = 0;
-
-  // install handler
-  sigaction(SIGTSTP, &SIGTSTP_action, NULL);
-}
-
+/****************************************************
+* Signal handler fro SIGINT
+*   dipslays a message that process has been eneded
+****************************************************/
 void handle_SIGINT(int signum){
-  char* message = "\nTerminated by signal 2\n";
-  write(STDOUT_FILENO, message, 24);
+  status = 2;
+  char* new_line = "\n";
+  write(STDOUT_FILENO, new_line, 1);
+  get_status();
 }
 
+/*********************************
+* Installs the handler for SIGINT
+**********************************/
 void set_SIGINT_action(){
   struct sigaction SIGINT_action = {0};
 
@@ -46,13 +46,19 @@ void set_SIGINT_action(){
   sigaction(SIGINT, &SIGINT_action, NULL);
 }
 
+/****************************
+* Signal handler for SIGCHLD
+*   Prevents zombies
+*****************************/
+void handle_SIGCHLD(int signum){
+  wait(WNOHANG);
+}
+
+/*********************************
+* Used in main to set signals
+*********************************/
 void set_signals(){
   signal(SIGINT, SIG_IGN);
   signal(SIGTSTP, handle_SIGTSTP);
-  //set_SIGTSTP_action();
-  signal(SIGCHLD, SIG_IGN);
+  signal(SIGCHLD, handle_SIGCHLD);
 }  
-
-void handle_SIGTERM(){
-  exit(0);
-}

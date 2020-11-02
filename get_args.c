@@ -1,28 +1,15 @@
 #include "smallsh.h"
 
-void test_get_command(struct sh_command* command){
-  for(int i = 0; i < command->arg_count; i++){
-    printf("%s\n", command->arg_list[i]);
-  }
-  if(command->input_file)
-    printf("input from %d\n", command->input_file);
-  if(command->output_file)
-    printf("output to %d\n", command->output_file);
-  if(command->background)
-    printf("to the back\n");
-  else
-    printf("in the front\n");
-}
-
 /*************************************************
 * Function gets user input
-*   Parameters: pointer to char array for input 
-*     and an array of background pids
+*   Parameters: pointer to char array for input, 
+*     array of background pids, and ptr to status
 *   Returns: None
 **************************************************/
 void get_user_input(char* user_input, pid_t* running){
+  // checck for any background processes that have ended
   check_background(running);
-      
+
   // show prompt and get input
   printf(": ");
   fgets(user_input, 2048, stdin);
@@ -119,11 +106,13 @@ struct sh_command* parse_command(char* user_input){
   return command;
 }
 
-/****************************************************************
+/****************************************************************************
 * Replaces all instances of '$$' with the pid in the user input
 *   Parameters: char array of user input
 *   Returns: a char array with $$ replaced with the pid
-****************************************************************/
+*   Credit: based on code from 
+*     www.geeksforgeeks.org/c-program-replace-word-text-another-given-word/
+****************************************************************************/
 void dollar_sign_swap(char* user_input){
   int i = 0;
   char new_input[2048] = "\0";
