@@ -51,7 +51,8 @@ void set_SIGINT_action(){
 *   Prevents zombies
 *****************************/
 void handle_SIGCHLD(int signum){
-  wait(WNOHANG);
+  while(waitpid(-1, &status, WNOHANG) > 0){
+    }
 }
 
 /*********************************
