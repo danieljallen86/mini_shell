@@ -46,13 +46,19 @@ void set_SIGINT_action(){
   sigaction(SIGINT, &SIGINT_action, NULL);
 }
 
-/****************************
+/*******************************************
 * Signal handler for SIGCHLD
-*   Prevents zombies
-*****************************/
+*   Prevents zombies while catching signals
+********************************************/
 void handle_SIGCHLD(int signum){
-  while(waitpid(-1, &status, WNOHANG) > 0){
-    }
+  int child_pid = waitpid(-1, &status, WNOHANG);
+  if(WIFEXITED(status)){
+    status = WEXITSTATUS(status);
+    
+  }else if(WIFSIGNALED(status)){
+    status = WTERMSIG(status);
+  }
+  child_pid = waitpid(-1, &status, WNOHANG);
 }
 
 /*********************************

@@ -92,13 +92,16 @@ void typed_process(struct sh_command* command, pid_t* running){
       }
 
       child_pid = waitpid(child_pid, &status, command->background);
-
+      
       if(WIFEXITED(status)){
         status = WEXITSTATUS(status);
         
       }else if(WIFSIGNALED(status)){
         status = WTERMSIG(status);
       }
+
+      // call a second time to see if background process finished
+      child_pid = waitpid(-1, &status, WNOHANG);
       
       // reset sigint ignore
       signal(SIGINT, SIG_IGN);
